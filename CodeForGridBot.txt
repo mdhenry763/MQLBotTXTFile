@@ -1,0 +1,120 @@
+input double gridZone = 20;
+input double buyTP = 20;
+input double buySL = 10;
+input double sellTP = 20;
+input double sellSL = 10;
+input double lotSize = 0.1;
+
+
+input int maPeriod = 200;
+int magicNo = 999;
+
+//Make sure above 5min 200EMA for grid buy every 20 units
+//if last 2 digits close[2] < 20 && close[1] > 20 buy
+
+void OnTick()
+{
+   double iMATwo = iMA(NULL,0,maPeriod,0,MODE_EMA,PRICE_CLOSE,0);
+   
+   double divider;
+   
+   
+   
+   int numDigits = GetNumDigits(Close[1]);
+   Print("This is numDigits: " + numDigits);
+   
+   if(numDigits == 5) { divider = 100;}
+   else if(numDigits == 4){ divider = 10;}
+   else {divider = 10000;}
+   
+   int gridValue1 = MathFloor(MathMod(Close[1],divider));
+   int gridValue2 = MathFloor(MathMod(Close[2],divider));
+  // Print("Last two values: " + gridValue1);
+   
+   //Buy Condition:
+   if(Close[1] > iMATwo){
+      int firstLine = MathFloor(Close[1] / 100) + 20;
+      int line2 = MathFloor(Close[1] / 100) + 40;
+      int line3 = MathFloor(Close[1] / 100) + 60;
+      int line4 = MathFloor(Close[1] / 100) + 80;
+      
+     // Print("The lines: " + MathFloor(Close[1] / 100) + 20);
+      //ObjectDelete("Line1");
+      //ObjectDelete("Line2");
+      //ObjectDelete("Line3");
+      //ObjectDelete("Line4");
+      //ObjectCreate("Line1",OBJ_HLINE,0,Time[0],firstLine); 
+      //ObjectCreate("Line2",OBJ_HLINE,0,Time[0],line2);
+      //ObjectCreate("Line3",OBJ_HLINE,0,Time[0],line3);
+      //ObjectCreate("Line4",OBJ_HLINE,0,Time[0],line4);
+      
+      //Close[2] < 20 but Close[1] is greater than 20 but smaller than 40
+      //Must do case for 0  to 20
+      if((gridValue2 < 20) && (gridValue1 > 20) && (gridValue1 < 40)){
+         Print("BUY from 0 to 20 range ");
+         BuyTrade();
+      }
+      if((gridValue2 > 20) && (gridValue2 < 40) && (gridValue1 > 40) && (gridValue1 < 60)){
+         Print("BUY from 20 to 40 range ");
+         BuyTrade();
+      }
+      if((gridValue2 > 40) && (gridValue2 < 60) && (gridValue1 > 60) && (gridValue1 < 80)){
+         Print("BUY from 40 to 60 range: ");
+         BuyTrade();
+      }
+      if((gridValue2 > 60) && (gridValue2 < 80) && (gridValue1 > 80) && (gridValue1 < 100)){
+         Print("BUY from 80 to 100 range ");
+         BuyTrade();
+      }
+      
+   }
+   //else{
+   //   if((gridValue2 > 20) && (gridValue1 < 20) && (gridValue1 > 0)){
+   //      Print("SELL from 40 to 20 range ");
+   //      SellTrade();
+   //   }
+   //   if((gridValue2 > 40) && (gridValue2 < 60) && (gridValue1 < 40) && (gridValue1 > 20)){
+   //      Print("SELL from 60 to 40 range ");
+   //      SellTrade();
+   //   }
+   //   if((gridValue2 > 60) && (gridValue2 < 80) && (gridValue1 < 60) && (gridValue1 > 40)){
+   //      Print("SELL from 80 to 60 range: ");
+   //      SellTrade();
+   //   }
+   //   if((gridValue2 > 80) && (gridValue2 < 99) && (gridValue1 < 80) && (gridValue1 > 60)){
+   //      Print("SELL from 100 to 80 range ");
+   //      SellTrade();
+   //   }
+   //}
+   
+}
+
+int GetNumDigits(double price){
+   double number = price;
+   int numDigits = 0;
+   
+   while (number > 1){
+      number /= 10;
+      numDigits++;
+   }
+   
+   return numDigits;
+}
+
+void BuyTrade(){
+   double takeProfit = Close[0] + buyTP;
+   double stopLoss = Close[0] - buySL;
+   if(OrdersTotal() == 0){
+      OrderSend(NULL,OP_BUY,lotSize,Close[0],100,stopLoss,takeProfit,NULL,magicNo);
+   }
+
+}
+
+void SellTrade(){
+   double takeProfit = Close[0] - sellTP;
+   double stopLoss = Close[0] + sellSL;
+   if(OrdersTotal() == 0){
+      OrderSend(NULL,OP_SELL,lotSize,Close[0],100,stopLoss,takeProfit,NULL,magicNo);
+   }
+
+}
